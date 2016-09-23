@@ -13,6 +13,11 @@ using namespace cv;
 class SudokuOCR
 {
 public:
+    //! @brief 仮想デストラクタ
+    virtual ~SudokuOCR(void)
+    {
+    }
+
     //! @brief  初期化処理
     //! @param  file_name libsvmモデルファイル
     //! @retval true      成功

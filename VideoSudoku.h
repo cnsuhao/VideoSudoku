@@ -66,8 +66,6 @@ private:
     const int cells_number;    //!< 一辺のマスの数
     const int result_min_size; //!< 結果画像の一辺の長さの最小値
 
-    const long input_max_area; //!< 入力画像の面積の最大値
-
     const char *input_name;  //!< 入力画像ウィンドウの名前
     const char *temp_name;   //!< 作業用画像ウィンドウの名前
     const char *result_name; //!< 結果画像ウィンドウの名前

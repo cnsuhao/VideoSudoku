@@ -18,7 +18,6 @@ using namespace std;
 VideoSudoku::VideoSudoku(void):
     cells_number(9),
     result_min_size(400),
-    input_max_area(4000000),
     input_name("Input frame"),
     temp_name("Temp frame"),
     result_name("Result frame"),
@@ -106,6 +105,8 @@ void VideoSudoku::finalize(void)
     if(ocr != nullptr)
     {
         ocr->finalize();
+
+        delete ocr;
         ocr = nullptr;
     }
 
@@ -135,13 +136,6 @@ bool VideoSudoku::capture_video(void)
     if(!capture.read(input_frame))
     {
         ERROR("カメラ入力を読み込めませんでした。\n");
-
-        return false;
-    }
-
-    if((input_frame.rows * input_frame.cols) > input_max_area)
-    {
-        ERROR("入力画像の面積は%ld以下にして下さい。\n", input_max_area);
 
         return false;
     }
