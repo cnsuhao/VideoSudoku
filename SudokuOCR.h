@@ -1,6 +1,6 @@
 //!
 //! @file      SudokuOCR.h
-//! @brief     SudokuOCR インタフェース定義 ファクトリ定義
+//! @brief     SudokuOCR 抽象クラス定義 ファクトリ定義
 //!
 
 #pragma once
@@ -9,11 +9,11 @@
 
 using namespace cv;
 
-//! @brief 数字を認識するインタフェース
+//! @brief 数字を認識する抽象クラス
 class SudokuOCR
 {
 public:
-    //! @brief 仮想デストラクタ
+    //! @brief デストラクタ
     virtual ~SudokuOCR(void)
     {
     }

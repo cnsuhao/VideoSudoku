@@ -7,6 +7,8 @@
 //! @copyright (c) 2016 Sakamoto Kanta, Suzuki Shota
 //!
 
+#include <stdlib.h>
+
 #include "VideoSudoku.h"
 
 int main(int argc, char **argv)
@@ -16,14 +18,16 @@ int main(int argc, char **argv)
 
     if(vs.initialize(400, 0) != 0)
     {
-        return 1;
+        return EXIT_FAILURE;
     }
 
     while(true)
     {
         if(!vs.capture_video())
         {
-            return 1;
+            vs.finalize();
+
+            return EXIT_FAILURE;
         }
 
         if(vs.fix_outer_frame())
@@ -43,5 +47,5 @@ int main(int argc, char **argv)
 
     vs.finalize();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
