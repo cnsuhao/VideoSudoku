@@ -24,7 +24,7 @@ $ make
 
 ``` bash
 $ cd ~/VideoSudoku
-$ vs
+$ ./vs
 ```
 
 ESCキーを押すとアプリケーションを終了します。
