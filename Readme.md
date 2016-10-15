@@ -8,7 +8,7 @@ Webカメラの入力映像から数独を検出して、リアルタイムに�
 
 ## 依存・動作環境
 + [OpenCV3.1](http://opencv.org)
-+ [libsvm](http://www.csie.ntu.edu.tw/~cjlin/libsvm/)
++ [libsvm3.21](http://www.csie.ntu.edu.tw/~cjlin/libsvm/)
 + Webカメラ
 
 ## インストール
@@ -37,9 +37,7 @@ $ rm -rf VideoSudoku
 ```
 
 ## ライセンス
-MITライセンスが適用されます。
-
-[MITライセンス](https://github.com/masaniwasdp/VideoSudoku/blob/master/Licence.txt)
+[MITライセンス](https://github.com/masaniwasdp/VideoSudoku/blob/master/Licence.txt)が適用されます。
 
 ## 作者
 + Sakamoto Kanta
