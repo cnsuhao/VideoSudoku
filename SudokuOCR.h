@@ -14,12 +14,10 @@ class SudokuOCR
 {
 public:
     //! @brief デストラクタ
-    virtual ~SudokuOCR(void)
-    {
-    }
+    virtual ~SudokuOCR(void) {}
 
     //! @brief  初期化処理
-    //! @param  file_name libsvmモデルファイル
+    //! @param  file_name モデルファイル
     //! @retval true      成功
     //! @retval false     失敗
     virtual bool initialize(const char *filename = nullptr) = 0;
@@ -35,7 +33,6 @@ public:
 };
 
 //! @brief  数字を認識するインスタンスを生成する
-//! @detail インスタンス使用後はdeleteが必要となる。
 //! @param  class_name 生成するクラス名 ["SVMOCR": SVMを利用したクラス]
 //! @return 生成したインスタンス
 SudokuOCR *sudokuOCRFactory(const char *class_name);

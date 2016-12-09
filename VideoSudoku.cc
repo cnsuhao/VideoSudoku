@@ -52,7 +52,6 @@ int VideoSudoku::initialize(int size, int device_id)
 
     if(!capture.isOpened())
     {
-        ERROR("カメラデバイス(id:%d)を開けませんでした。\n", device_id);
         finalize();
 
         return 1;
@@ -62,7 +61,6 @@ int VideoSudoku::initialize(int size, int device_id)
 
     if(ocr == nullptr)
     {
-        ERROR("文字認識オブジェクトを初期化できませんでした。\n");
         finalize();
 
         return 2;
@@ -70,7 +68,6 @@ int VideoSudoku::initialize(int size, int device_id)
 
     if(!ocr->initialize(model))
     {
-        ERROR("モデルデータ(%s)を読み込めませんでした。\n", model);
         finalize();
 
         return 3;
@@ -128,15 +125,11 @@ bool VideoSudoku::capture_video(void)
 {
     if(!initialized)
     {
-        ERROR("オブジェクトが正しく初期化されていません。\n");
-
         return false;
     }
 
     if(!capture.read(input_frame))
     {
-        ERROR("カメラ入力を読み込めませんでした。\n");
-
         return false;
     }
 
@@ -147,8 +140,6 @@ void VideoSudoku::display(bool results_availability)
 {
     if(!initialized)
     {
-        ERROR("オブジェクトが正しく初期化されていません。\n");
-
         return;
     }
 
@@ -175,12 +166,10 @@ bool VideoSudoku::fix_outer_frame(void)
 {
     if(!initialized)
     {
-        ERROR("オブジェクトが正しく初期化されていません。\n");
-
         return false;
     }
 
-    input_frame.clone().copyTo(temp_frame);
+    input_frame.copyTo(temp_frame);
     make_binary_frame(temp_frame, THRESH_BINARY_INV);
 
     if(!get_outer_contour())
@@ -188,24 +177,22 @@ bool VideoSudoku::fix_outer_frame(void)
         return false;
     }
 
-    // 近似精度を輪郭の外周の1/100にすることで精度よく近似できた
-    double epsilon = 0.01 * arcLength(Mat(contour), true);
-    approxPolyDP(Mat(contour), contour, epsilon, true);
+    Mat contour_matrix(contour);
+    double epsilon = 0.01 * arcLength(contour_matrix, true);
+    approxPolyDP(contour_matrix, contour, epsilon, true);
 
     if(is_sudoku_contour())
     {
-        Mat local_temp_frame = input_frame.clone();
+        input_frame.copyTo(temp_frame);
 
         Rect bound_rect = boundingRect(contour);
-
         Mat homography = get_homography(contour, bound_rect);
 
-        warpPerspective(local_temp_frame, local_temp_frame, homography, local_temp_frame.size());
+        warpPerspective(temp_frame, temp_frame, homography, temp_frame.size());
 
-        local_temp_frame = Mat(local_temp_frame, bound_rect);
-        resize(local_temp_frame, local_temp_frame, Size(result_size, result_size));
+        temp_frame = Mat(temp_frame, bound_rect);
+        resize(temp_frame, temp_frame, Size(result_size, result_size));
 
-        local_temp_frame.clone().copyTo(temp_frame);
         make_binary_frame(temp_frame, THRESH_BINARY);
 
         return true;
@@ -218,15 +205,13 @@ bool VideoSudoku::solve(void)
 {
     if(!initialized)
     {
-        ERROR("オブジェクトが正しく初期化されていません。\n");
-
         return false;
     }
 
     delete_grid();
 
-    // 数独の向きによらずに結果を得るため、数独を解けなかったときに画像を回転させて再試行するようにした
-    // また、前回の回転状況を保持することで無駄な回転を抑えた
+    // 数独の向きによらずに結果を得るため、数独を解けなかったときに画像を回転させて再試行するようにした。
+    // また、前回の回転状況を保持することで無駄な回転を抑えた。
     rotate_frame(rotate_phase);
 
     for(int i = 0; i <= 3; i++)
@@ -250,19 +235,25 @@ bool VideoSudoku::solve(void)
 
 bool VideoSudoku::recognize_number(void)
 {
-    // 数独の初期値として適切かどうか調べるために、文字を認識する前にすべてのマスに数字が詰まっているとみなす
-    // 数字の詰まっているマスの数を保持しておき、数字の無いマスを見つけ次第差し引いていく
-    // 数独の初期値として適切でないと判断した時点で文字認識を止める
-    int count = cells_number * cells_number;
-    int number = 0;
-    Point position;
+    int all_cells_number = cells_number * cells_number;
 
-    for(int i = 0; i < (cells_number * cells_number); i++)
+    // 数独の初期値として適切かどうか調べるために、文字を認識する前にすべてのマスに数字が詰まっているとみなす。
+    // 数字の詰まっているマスの数を保持しておき、数字の無いマスを見つけ次第差し引いていく。
+    // 数独の初期値として適切でないと判断した時点で文字認識を止める。
+    int count = all_cells_number;
+    int number = 0;
+
+    Point position;
+    Rect cut_area(0, 0, cell_size, cell_size);
+
+    for(int i = 0; i < all_cells_number; i++)
     {
         position.x = (i % cells_number) * cell_size;
         position.y = (i / cells_number) * cell_size;
 
-        Rect cut_area(position.x, position.y, cell_size, cell_size);
+        cut_area.x = position.x;
+        cut_area.y = position.y;
+
         Mat cut_img(temp_frame, cut_area);
 
         number = ocr->recognize_number(cut_img);
@@ -280,15 +271,14 @@ bool VideoSudoku::recognize_number(void)
         input_problem[i] = static_cast<char>(number) + '0';
     }
 
-    input_problem[(cells_number * cells_number) + 1] = '\0';
+    input_problem[all_cells_number + 1] = '\0';
 
     return true;
 }
 
 void VideoSudoku::frame_initialize(Mat &frame, int size)
 {
-    Mat back_ground(Size(size, size), CV_8UC3, frame_background_color);
-    back_ground.clone().copyTo(frame);
+    frame = Mat(Size(size, size), CV_8UC3, frame_background_color);
 }
 
 bool VideoSudoku::is_sudoku_contour(void)
@@ -316,23 +306,28 @@ bool VideoSudoku::is_sudoku_contour(void)
 
 void VideoSudoku::draw_result(void)
 {
-    string text;
+    int all_cells_number = cells_number * cells_number;
+
     Point position;
 
-    for(int i = 0; i < (cells_number * cells_number); i++)
+    for(int i = 0; i < all_cells_number; i++)
     {
         position.x = ((i % cells_number) * cell_size) + text_offset;
         position.y = ((1 + (i / cells_number)) * cell_size) - text_offset;
 
-        if((result_problem[i] >= '1') && (result_problem[i] <= '9'))
+        char input = input_problem[i];
+        char result = result_problem[i];
+
+        // 結果には初期値も含まれているため、初期値は後で上から描画する。
+        if((result >= '1') && (result <= '9'))
         {
-            text = string(1, result_problem[i]);
+            string text(1, result);
             putText(result_frame, text, position, FONT_HERSHEY_SIMPLEX, 1, result_text_color, 3);
         }
 
-        if((input_problem[i] >= '1') && (input_problem[i] <= '9'))
+        if((input >= '1') && (input <= '9'))
         {
-            text = string(1, input_problem[i]);
+            string text(1, input);
             putText(result_frame, text, position, FONT_HERSHEY_SIMPLEX, 1, initial_text_color, 3);
         }
     }
@@ -350,7 +345,10 @@ void VideoSudoku::draw_cell(void)
         pt2.y = result_size;
 
         line(result_frame, pt1, pt2, cell_line_color, 1);
+    }
 
+    for(int i = 0; i < cells_number; i++)
+    {
         pt1.x = 0;
         pt1.y = cell_size * i;
         pt2.x = result_size;
@@ -363,7 +361,6 @@ void VideoSudoku::draw_cell(void)
 void VideoSudoku::make_binary_frame(Mat &target_frame, int threshold_type)
 {
     cvtColor(target_frame, target_frame, COLOR_RGB2GRAY);
-
     adaptiveThreshold(target_frame, target_frame, 255.0, ADAPTIVE_THRESH_MEAN_C, threshold_type, 23, 5.5);
 }
 
@@ -371,25 +368,24 @@ bool VideoSudoku::get_outer_contour(void)
 {
     int max_area_contour = 0;
     long max_area = 0;
-    long temp_area;
 
     vector<vector<Point>> contours;
-
-    Mat local_temp_frame = temp_frame.clone();
-    findContours(local_temp_frame, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    findContours(temp_frame, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
     if(contours.empty())
     {
         return false;
     }
 
-    for(int i = 0; i < static_cast<int>(contours.size()); i++)
-    {
-        temp_area = contourArea(contours.at(i));
+    int size = static_cast<int>(contours.size());
 
-        if(max_area < temp_area)
+    for(int i = 0; i < size; i++)
+    {
+        long area = contourArea(contours.at(i));
+
+        if(max_area < area)
         {
-            max_area = temp_area;
+            max_area = area;
             max_area_contour = i;
         }
     }
@@ -401,22 +397,28 @@ bool VideoSudoku::get_outer_contour(void)
 
 Mat VideoSudoku::get_homography(vector<Point> &frame_contour, Rect &bound_rect)
 {
+    int x = bound_rect.x;
+    int y = bound_rect.y;
+    int width = bound_rect.width;
+    int height = bound_rect.height;
+
     vector<Point> corner_contour;
 
-    // 輪郭の頂点1と頂点3のx座標の関係によって、矩形の頂点指定順を変更する
+    // 矩形と輪郭の頂点を対応させる。
+    // 輪郭の頂点0と頂点2のx座標の関係によって、矩形の頂点指定順を変更する。
     if(contour.at(0).x < contour.at(2).x)
     {
-        corner_contour.push_back(Point(bound_rect.x, bound_rect.y));
-        corner_contour.push_back(Point(bound_rect.x, bound_rect.y + bound_rect.height));
-        corner_contour.push_back(Point(bound_rect.x + bound_rect.width, bound_rect.y + bound_rect.height));
-        corner_contour.push_back(Point(bound_rect.x + bound_rect.width, bound_rect.y));
+        corner_contour.push_back(Point(x, y));
+        corner_contour.push_back(Point(x, y + height));
+        corner_contour.push_back(Point(x + width, y + height));
+        corner_contour.push_back(Point(x + width, y));
     }
     else
     {
-        corner_contour.push_back(Point(bound_rect.x + bound_rect.width, bound_rect.y));
-        corner_contour.push_back(Point(bound_rect.x, bound_rect.y));
-        corner_contour.push_back(Point(bound_rect.x, bound_rect.y + bound_rect.height));
-        corner_contour.push_back(Point(bound_rect.x + bound_rect.width, bound_rect.y + bound_rect.height));
+        corner_contour.push_back(Point(x + width, y));
+        corner_contour.push_back(Point(x, y));
+        corner_contour.push_back(Point(x, y + height));
+        corner_contour.push_back(Point(x + width, y + height));
     }
 
     return findHomography(frame_contour, corner_contour);
@@ -425,8 +427,8 @@ Mat VideoSudoku::get_homography(vector<Point> &frame_contour, Rect &bound_rect)
 void VideoSudoku::delete_grid(void)
 {
     int line_thickness = (12 * result_size) / 500;
-    Scalar delete_line_color(255, 255, 255);
 
+    Scalar delete_line_color(255, 255, 255);
     Point pt1, pt2;
 
     for(int i = 0; i <= cells_number; i++)
@@ -437,7 +439,10 @@ void VideoSudoku::delete_grid(void)
         pt2.y = result_size;
 
         line(temp_frame, pt1, pt2, delete_line_color, line_thickness);
+    }
 
+    for(int i = 0; i <= cells_number; i++)
+    {
         pt1.x = 0;
         pt1.y = cell_size * i;
         pt2.x = result_size;
@@ -455,8 +460,8 @@ void VideoSudoku::rotate_frame(int phase)
     }
 
     Point frame_center(result_size / 2, result_size / 2);
-
     Mat rotation_matrix = getRotationMatrix2D(frame_center, phase * 90, 1);
+
     warpAffine(temp_frame, temp_frame, rotation_matrix, Size(result_size, result_size));
 }
 
@@ -465,9 +470,9 @@ bool VideoSudoku::sudoku_solve(void)
     bool result_code = static_cast<bool>(solve_dlx_sudoku(input_problem, result_problem));
 
 #if VIDEOSUDOKU_DEBUG
-    DEBUG("input:  %s", input_problem);
-    DEBUG("result: %s", result_problem);
-    DEBUG("code:   %d", result_code);
+    DEBUG(" input  : %s", input_problem);
+    DEBUG(" result : %s", result_problem);
+    DEBUG(" code   : %d", result_code);
 #endif
 
     return result_code;

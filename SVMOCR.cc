@@ -17,7 +17,6 @@ using namespace std;
 
 bool SVMOCR::initialize(const char *initialize_file_name)
 {
-    // libsvm のモデルのロード (モデルは別途、学習済み)
     if(initialize_file_name != nullptr)
     {
         model = svm_load_model(initialize_file_name);
@@ -29,7 +28,7 @@ bool SVMOCR::initialize(const char *initialize_file_name)
 
     if(model != nullptr)
     {
-        // probability にアクセスするため、ラベルに対応する index のテーブルを作成しておく　
+        // probability にアクセスするため、ラベルに対応する index のテーブルを作成しておく。
         for(int i = 0; i < 10; i++)
         {
             for(int j = 0; j < 10; j++)
@@ -52,7 +51,6 @@ void SVMOCR::finalize(void)
     svm_free_and_destroy_model(&model);
 }
 
-
 int SVMOCR::recognize_number(Mat &mat)
 {
     compute_feature(mat, data);
@@ -60,10 +58,8 @@ int SVMOCR::recognize_number(Mat &mat)
     return predict(data);
 }
 
-
 void SVMOCR::print_image(Mat &mat)
 {
-    // デバッグ用のデータダンプ
     for(int row = 0; row < mat.rows; row++)
     {
         const unsigned char *ptr = mat.ptr<unsigned char>(row);
@@ -81,10 +77,9 @@ void SVMOCR::compute_feature(Mat &mat, unsigned char *data)
 {
     normalize(mat, mat);
 
-    // サイズを所定のサイズ (IMAGE_RC x IMAGE_RC) にする
     resize(mat, mat, Size(IMAGE_RC, IMAGE_RC));
 
-    // 画像データをそのまま１次元の判定データにする
+    // 画像データをそのまま１次元の判定データにする。
     for(int row = 0; row < mat.rows; row++)
     {
         const unsigned char *ptr = mat.ptr<unsigned char>(row);
@@ -150,7 +145,7 @@ void SVMOCR::normalize(Mat &src, Mat &dst)
 
 int SVMOCR::predict(unsigned char *data)
 {
-    // svm_predict*() を利用するためにデータの変換を行う
+    // svm_predict*() を利用するためにデータの変換を行う。
     for(int i = 0; i < DATA_SIZE; i++)
     {
         x[i].index = i + 1;
@@ -159,7 +154,7 @@ int SVMOCR::predict(unsigned char *data)
 
     x[DATA_SIZE].index = -1;
 
-    // svm_predict*() を呼び出す
+    // svm_predict*() を呼び出す。
     // probability が不要であれば、svm_predict() でもよい。
     double d = svm_predict_probability(model, x, probability);
 

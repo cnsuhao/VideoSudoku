@@ -10,21 +10,42 @@
 #include <stdlib.h>
 
 #include "VideoSudoku.h"
+#include "debuglog.h"
 
 int main(int argc, char **argv)
 {
-    bool results_availability = false;
     VideoSudoku vs;
 
-    if(vs.initialize(400, 0) != 0)
+    bool results_availability = false;
+    int code = vs.initialize(400, 0);
+
+    switch(code)
     {
-        return EXIT_FAILURE;
+        case 1:
+            ERROR("The camera device wasn't able to be opened.");
+
+            return EXIT_FAILURE;
+
+        case 2:
+            ERROR("The OCR initialization was failed.");
+
+            return EXIT_FAILURE;
+
+        case 3:
+            ERROR("The model file wasn't able to be opened.");
+
+            return EXIT_FAILURE;
+
+        default:
+            break;
     }
 
     while(true)
     {
         if(!vs.capture_video())
         {
+            ERROR("The camera device wasn't able to be read.");
+
             vs.finalize();
 
             return EXIT_FAILURE;
@@ -37,8 +58,8 @@ int main(int argc, char **argv)
 
         vs.display(results_availability);
 
-        // ESCキーの入力を取得する
-        // 64bitのLinuxにおいて、取得されるキーコードがおかしくなるため256との剰余を取る
+        // ESCキーの入力を取得する。
+        // 64bitのLinuxにおいて取得されるキーコードがおかしくなるため、256との剰余を取る。
         if((waitKey(60) % 256) == 27)
         {
             break;

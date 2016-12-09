@@ -52,9 +52,6 @@ static void dlx_remove_column(dlx_t *dlx, dlx_cell_t *column_header);
 static void dlx_restore_column(dlx_t *dlx, dlx_cell_t *column_header);
 static void dlx_initialize_column_headers(dlx_t *dlx);
 
-// static void dlx_reinitialize_work(dlx_t *dlx);
-// static void dlx_reinitialize_row_pointers(dlx_t *dlx);
-
 static inline void dlx_cell_up_down_self(dlx_cell_t *cell)
 {
     cell->up = cell->down = cell;
@@ -225,7 +222,6 @@ static void dlx_initialize_column_headers(dlx_t *dlx)
 
 void dlx_delete(dlx_t *dlx)
 {
-
     dlx_free_all_cells(dlx);
 
     free(dlx->row_pointers);
@@ -233,8 +229,6 @@ void dlx_delete(dlx_t *dlx)
     free(dlx->results);
     free(dlx->root);
     free(dlx);
-
-    // dlx_reinitialize_work(dlx);
 }
 
 static void dlx_free_all_cells(dlx_t *dlx)
@@ -264,33 +258,6 @@ static void dlx_free_all_cells(dlx_t *dlx)
         }
     }
 }
-
-/*
-static void dlx_reinitialize_work(dlx_t *dlx)
-{
-    dlx_initialize_column_headers(dlx);
-    dlx_reinitialize_row_pointers(dlx);
-    dlx_clear_results(dlx);
-}
-
-static void dlx_reinitialize_row_pointers(dlx_t *dlx)
-{
-    int row_i;
-    dlx_cell_t *cell;
-
-    for(row_i = 0; row_i < dlx->nrow; row_i++)
-    {
-        cell = dlx->row_pointers[row_i];
-
-        do
-        {
-            dlx_cell_restore_up_down(cell);
-            cell = cell->right;
-        }
-        while(cell != dlx->row_pointers[row_i]);
-    }
-}
-*/
 
 int dlx_set_cell(dlx_t *dlx, int row, int col)
 {
@@ -381,12 +348,14 @@ int dlx_solve(dlx_t *dlx)
         }
 
         dlx_unpush_result(dlx);
-        r_column = select_row->left; // rightからleftにすると速くなりました
+
+        // rightよりleftの方が速かった。
+        r_column = select_row->left;
 
         while(r_column != select_row)
         {
             dlx_restore_column(dlx, r_column->column_header);
-            r_column = r_column->left; // rightからleftに変更
+            r_column = r_column->left;
         }
 
         select_row = select_row->down;
@@ -409,14 +378,6 @@ dlx_cell_t *dlx_choose_column(dlx_t *dlx)
         {
             return (dlx_cell_t*)0;
         }
-
-        // ここを追加するとreal 0m0.300sくらいになりました
-        /*
-        if(column_cell->nrow == 1)
-        {
-            return column_cell;
-        }
-        */
 
         if(min_nrow > column_cell->nrow)
         {

@@ -62,7 +62,7 @@ int solve_dlx_sudoku(const char *problem, char *result)
 
     dlx = dlx_new((N * N_ROW * N_COL), (N_ROW * N_COL * N_TYPE_COL), solve_dlx_sudoku_cb, result);
 
-    if(dlx == NULL)
+    if(dlx == (dlx_t*)0)
     {
         return 0;
     }
@@ -142,9 +142,9 @@ void load_and_solve_sudoku(const char *filename)
 
     fp = fopen(filename, "r");
 
-    if(fp != NULL)
+    if(fp != (FILE*)0)
     {
-        while((s = fgets(tmp, N_CELL+1, fp)) != NULL)
+        while((s = fgets(tmp, N_CELL+1, fp)) != (char*)0)
         {
             if(strlen(s) == N_CELL)
             {

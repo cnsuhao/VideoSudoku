@@ -28,7 +28,7 @@ class SVMOCR: public SudokuOCR
 
 public:
     //! @brief  初期化処理
-    //! @param  file_name libsvmモデルファイル
+    //! @param  file_name モデルファイル
     //! @retval true      成功
     //! @retval false     失敗
     virtual bool initialize(const char *file_name);
