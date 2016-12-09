@@ -22,17 +22,17 @@ int main(int argc, char **argv)
     switch(code)
     {
         case 1:
-            ERROR("The camera device wasn't able to be opened.");
+            ERROR("The camera device wasn't able to be opened.\n");
 
             return EXIT_FAILURE;
 
         case 2:
-            ERROR("The OCR initialization was failed.");
+            ERROR("The OCR initialization was failed.\n");
 
             return EXIT_FAILURE;
 
         case 3:
-            ERROR("The model file wasn't able to be opened.");
+            ERROR("The model file wasn't able to be opened.\n");
 
             return EXIT_FAILURE;
 
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     {
         if(!vs.capture_video())
         {
-            ERROR("The camera device wasn't able to be read.");
+            ERROR("The camera device wasn't able to be read.\n");
 
             vs.finalize();
 
