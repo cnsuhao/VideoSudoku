@@ -17,9 +17,8 @@ int main(int argc, char **argv)
     VideoSudoku vs;
 
     bool results_availability = false;
-    int code = vs.initialize(400, 0);
 
-    switch(code)
+    switch(vs.initialize(400, 0))
     {
         case 1:
             ERROR("The camera device wasn't able to be opened.\n");
@@ -35,9 +34,6 @@ int main(int argc, char **argv)
             ERROR("The model file wasn't able to be opened.\n");
 
             return EXIT_FAILURE;
-
-        default:
-            break;
     }
 
     while(true)
