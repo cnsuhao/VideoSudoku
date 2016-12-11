@@ -12,13 +12,18 @@
 #include "VideoSudoku.h"
 #include "debuglog.h"
 
+#define WINDOW_SIZE 400 //!< ウィンドウサイズ
+#define CAMERA_ID 0     //!< カメラデバイスのID
+#define WAIT_TIME 60    //!< キー入力の待ち時間
+#define CODE_ESCAPE 27  //!< Escapeキーのキーコード
+
 int main(int argc, char **argv)
 {
     VideoSudoku vs;
 
     bool results_availability = false;
 
-    switch(vs.initialize(400, 0))
+    switch(vs.initialize(WINDOW_SIZE, CAMERA_ID))
     {
         case 1:
             ERROR("The camera device wasn't able to be opened.\n");
@@ -42,8 +47,6 @@ int main(int argc, char **argv)
         {
             ERROR("The camera device wasn't able to be read.\n");
 
-            vs.finalize();
-
             return EXIT_FAILURE;
         }
 
@@ -56,13 +59,11 @@ int main(int argc, char **argv)
 
         // ESCキーの入力を取得する。
         // 64bitのLinuxにおいて取得されるキーコードがおかしくなるため、256との剰余を取る。
-        if((waitKey(60) % 256) == 27)
+        if((waitKey(WAIT_TIME) % 256) == CODE_ESCAPE)
         {
             break;
         }
     }
-
-    vs.finalize();
 
     return EXIT_SUCCESS;
 }

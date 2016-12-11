@@ -9,8 +9,8 @@ OBJS = vs.o VideoSudoku.o SudokuOCR.o SVMOCR.o dlx_sudoku.o dlx.o
 $(TARGET): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
-dlx_sudoku: dlx_sudoku.o dlx.o
-	$(CC) -o $@ dlx_sudoku.c dlx.c -DUSE_SUDOKU_MAIN $(CFLAGS)
+$(SUBTARGET): dlx_sudoku.o dlx.o
+	$(CC) -o $@ dlx_sudoku.c dlx.c -DUSE_SUDOKU_MAIN
 
 .PHONY : clean
 clean:
