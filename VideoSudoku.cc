@@ -10,8 +10,6 @@
 #include "VideoSudoku.h"
 #include "dlx_sudoku.h"
 
-#define VIDEOSUDOKU_DEBUG 0
-
 using namespace cv;
 using namespace std;
 
@@ -88,7 +86,7 @@ int VideoSudoku::initialize(int size, int device_id)
 
     namedWindow(input_name, CV_WINDOW_AUTOSIZE | CV_GUI_NORMAL);
     namedWindow(result_name, CV_WINDOW_AUTOSIZE | CV_GUI_NORMAL);
-#if VIDEOSUDOKU_DEBUG
+#if defined(VS_DEBUG)
     namedWindow(temp_name, CV_WINDOW_AUTOSIZE | CV_GUI_NORMAL);
 #endif
 
@@ -116,7 +114,7 @@ void VideoSudoku::finalize(void)
 
     destroyWindow(input_name);
     destroyWindow(result_name);
-#if VIDEOSUDOKU_DEBUG
+#if defined(VS_DEBUG)
     destroyWindow(temp_name);
 #endif
 }
@@ -157,7 +155,7 @@ void VideoSudoku::display(bool results_availability)
 
     imshow(input_name, input_frame);
     imshow(result_name, result_frame);
-#if VIDEOSUDOKU_DEBUG
+#if defined(VS_DEBUG)
     imshow(temp_name, temp_frame);
 #endif
 }
@@ -224,7 +222,7 @@ bool VideoSudoku::solve(void)
             }
         }
 
-        rotate_frame();
+        rotate_frame(90);
 
         rotate_phase++;
         rotate_phase %= 4;
@@ -469,7 +467,7 @@ bool VideoSudoku::sudoku_solve(void)
 {
     bool result_code = static_cast<bool>(solve_dlx_sudoku(input_problem, result_problem));
 
-#if VIDEOSUDOKU_DEBUG
+#if defined(VS_DEBUG)
     DEBUG(" input  : %s", input_problem);
     DEBUG(" result : %s", result_problem);
     DEBUG(" code   : %d", result_code);

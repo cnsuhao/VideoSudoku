@@ -17,6 +17,11 @@
 #define WAIT_TIME 60    //!< キー入力の待ち時間
 #define CODE_ESCAPE 27  //!< Escapeキーのキーコード
 
+#define CAMERA_OPENING_ERROR "The camera device wasn't able to be opened.\n" //!< カメラデバイスを開けなかったエラーメッセージ
+#define CAMERA_READING_ERROR "The camera device wasn't able to be read.\n"   //!< カメラデバイスを読めなかったエラーメッセージ
+#define OCR_INITIALIZATION_ERROR "The OCR initialization was failed.\n"      //!< OCRを初期化できなかったエラーメッセージ
+#define MODEL_OPENING_ERROR "The model file wasn't able to be opened.\n"     //!< モデルファイルを開けなかったエラーメッセージ
+
 int main(int argc, char **argv)
 {
     VideoSudoku vs;
@@ -26,17 +31,17 @@ int main(int argc, char **argv)
     switch(vs.initialize(WINDOW_SIZE, CAMERA_ID))
     {
         case 1:
-            ERROR("The camera device wasn't able to be opened.\n");
+            ERROR(CAMERA_OPENING_ERROR);
 
             return EXIT_FAILURE;
 
         case 2:
-            ERROR("The OCR initialization was failed.\n");
+            ERROR(OCR_INITIALIZATION_ERROR);
 
             return EXIT_FAILURE;
 
         case 3:
-            ERROR("The model file wasn't able to be opened.\n");
+            ERROR(MODEL_OPENING_ERROR);
 
             return EXIT_FAILURE;
     }
@@ -45,7 +50,7 @@ int main(int argc, char **argv)
     {
         if(!vs.capture_video())
         {
-            ERROR("The camera device wasn't able to be read.\n");
+            ERROR(CAMERA_READING_ERROR);
 
             return EXIT_FAILURE;
         }
@@ -57,11 +62,11 @@ int main(int argc, char **argv)
 
         vs.display(results_availability);
 
-        // ESCキーの入力を取得する。
         // 64bitのLinuxにおいて取得されるキーコードがおかしくなるため、256との剰余を取る。
-        if((waitKey(WAIT_TIME) % 256) == CODE_ESCAPE)
+        switch(waitKey(WAIT_TIME) % 256)
         {
-            break;
+            case CODE_ESCAPE:
+                return EXIT_SUCCESS;
         }
     }
 

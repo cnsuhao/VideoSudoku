@@ -38,7 +38,7 @@ public:
     //! @retval 1         カメラデバイスを開けなかった
     //! @retval 2         文字認識オブジェクトの初期化失敗
     //! @retval 3         モデルデータの読み込み失敗
-    int initialize(int size = 400, int device_id = 0);
+    int initialize(int size, int device_id);
 
     //! @brief 終了処理
     void finalize(void);
@@ -139,7 +139,7 @@ private:
 
     //! @brief 画像を回転する
     //! @param phase 回転角度 [0:0 1:90 2:180 3:270]
-    void rotate_frame(int phase = 1);
+    void rotate_frame(int phase);
 
     //! @brief  数独を解く
     //! @retval true  数独を解けた

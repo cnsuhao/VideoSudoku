@@ -6,14 +6,13 @@
 //! @copyright (c) 2016 Yamato Komei
 //!
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
-#include <time.h>
 
 #include "dlx.h"
 
 struct dlx_cell_s;
+
 typedef struct dlx_cell_s dlx_cell_t;
 
 struct dlx_cell_s

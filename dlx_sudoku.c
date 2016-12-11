@@ -7,9 +7,9 @@
 //!
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <memory.h>
 #include <ctype.h>
-#include <assert.h>
 
 #include "dlx_sudoku.h"
 #include "dlx.h"
@@ -132,7 +132,6 @@ static void set_dlx_sudoku_problem(dlx_t *dlx, const char *problem)
     }
 }
 
-#if defined(USE_SUDOKU_MAIN)
 void load_and_solve_sudoku(const char *filename)
 {
     FILE *fp;
@@ -160,12 +159,13 @@ void load_and_solve_sudoku(const char *filename)
     }
 }
 
-int main(int argc, char *argv[])
+#if defined(USE_SUDOKU_MAIN)
+int main(int argc, char **argv)
 {
     load_and_solve_sudoku("test/top95.txt");
     load_and_solve_sudoku("test/hardest.txt");
     load_and_solve_sudoku("test/diff.txt");
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 #endif
