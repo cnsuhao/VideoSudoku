@@ -16,6 +16,7 @@
 #define CAMERA_ID 0     //!< カメラデバイスのID
 #define WAIT_TIME 60    //!< キー入力の待ち時間
 #define CODE_ESCAPE 27  //!< Escapeキーのキーコード
+#define CODE_SPACE 32   //!< Spaceキーのキーコード
 
 #define CAMERA_OPENING_ERROR "The camera device wasn't able to be opened.\n" //!< カメラデバイスを開けなかったエラーメッセージ
 #define CAMERA_READING_ERROR "The camera device wasn't able to be read.\n"   //!< カメラデバイスを読めなかったエラーメッセージ
@@ -26,6 +27,7 @@ int main(int argc, char **argv)
 {
     VideoSudoku vs;
 
+    bool state_holding = false;
     bool results_availability = false;
 
     switch(vs.initialize(WINDOW_SIZE, CAMERA_ID))
@@ -60,13 +62,20 @@ int main(int argc, char **argv)
             results_availability = vs.solve();
         }
 
-        vs.display(results_availability);
+        if(!state_holding)
+        {
+            vs.display(results_availability);
+        }
 
         // 64bitのLinuxにおいて取得されるキーコードがおかしくなるため、256との剰余を取る。
         switch(waitKey(WAIT_TIME) % 256)
         {
             case CODE_ESCAPE:
                 return EXIT_SUCCESS;
+
+            case CODE_SPACE:
+                state_holding = !state_holding;
+                break;
         }
     }
 
