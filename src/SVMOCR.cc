@@ -11,7 +11,7 @@
 
 #include "SVMOCR.h"
 
-#define DEFAULT_MODEL_FILE "normalized30x30.model"
+#define DEFAULT_MODEL_FILE "model/normalized30x30.model"
 
 using namespace std;
 

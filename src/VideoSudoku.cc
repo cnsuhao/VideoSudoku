@@ -20,15 +20,22 @@ VideoSudoku::VideoSudoku(void):
     temp_name("Temp frame"),
     result_name("Result frame"),
     ocr_type("SVMOCR"),
-    model("normalized30x30.model"),
+    model("model/normalized30x30.model"),
     contour_line_color(0, 255, 0),
     frame_background_color(255, 255, 255),
     initial_text_color(255, 0, 0),
     result_text_color(0, 0, 255),
     cell_line_color(0, 255, 0),
-    rotate_phase(0),
+    result_size(0),
+    cell_size(0),
+    text_offset(0),
     initialized(false),
-    ocr(nullptr)
+    ocr(nullptr),
+    capture(),
+    input_frame(),
+    temp_frame(),
+    result_frame(),
+    contour()
 {
     input_problem = new char[(cells_number * cells_number) + 1];
     result_problem = new char[(cells_number * cells_number) + 1];
@@ -86,7 +93,7 @@ int VideoSudoku::initialize(int size, int device_id)
 
     namedWindow(input_name, CV_WINDOW_AUTOSIZE | CV_GUI_NORMAL);
     namedWindow(result_name, CV_WINDOW_AUTOSIZE | CV_GUI_NORMAL);
-#if defined(VS_DEBUG)
+#ifdef VS_DEBUG
     namedWindow(temp_name, CV_WINDOW_AUTOSIZE | CV_GUI_NORMAL);
 #endif
 
@@ -114,7 +121,7 @@ void VideoSudoku::finalize(void)
 
     destroyWindow(input_name);
     destroyWindow(result_name);
-#if defined(VS_DEBUG)
+#ifdef VS_DEBUG
     destroyWindow(temp_name);
 #endif
 }
@@ -155,7 +162,7 @@ void VideoSudoku::display(bool results_availability)
 
     imshow(input_name, input_frame);
     imshow(result_name, result_frame);
-#if defined(VS_DEBUG)
+#ifdef VS_DEBUG
     imshow(temp_name, temp_frame);
 #endif
 }
@@ -208,24 +215,12 @@ bool VideoSudoku::solve(void)
 
     delete_grid();
 
-    // 数独の向きによらずに結果を得るため、数独を解けなかったときに画像を回転させて再試行するようにした。
-    // また、前回の回転状況を保持することで無駄な回転を抑えた。
-    rotate_frame(rotate_phase);
-
-    for(int i = 0; i <= 3; i++)
+    if(recognize_number())
     {
-        if(recognize_number())
+        if(sudoku_solve())
         {
-            if(sudoku_solve())
-            {
-                return true;
-            }
+            return true;
         }
-
-        rotate_frame(90);
-
-        rotate_phase++;
-        rotate_phase %= 4;
     }
 
     return false;
@@ -450,24 +445,11 @@ void VideoSudoku::delete_grid(void)
     }
 }
 
-void VideoSudoku::rotate_frame(int phase)
-{
-    if(phase == 0)
-    {
-        return;
-    }
-
-    Point frame_center(result_size / 2, result_size / 2);
-    Mat rotation_matrix = getRotationMatrix2D(frame_center, phase * 90, 1);
-
-    warpAffine(temp_frame, temp_frame, rotation_matrix, Size(result_size, result_size));
-}
-
 bool VideoSudoku::sudoku_solve(void)
 {
     bool result_code = static_cast<bool>(solve_dlx_sudoku(input_problem, result_problem));
 
-#if defined(VS_DEBUG)
+#ifdef VS_DEBUG
     DEBUG(" input  : %s", input_problem);
     DEBUG(" result : %s", result_problem);
     DEBUG(" code   : %d", result_code);

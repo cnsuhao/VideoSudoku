@@ -81,7 +81,6 @@ private:
     int result_size;  //!< 結果画像の一辺の長さ
     int cell_size;    //!< マスの一辺の長さ
     int text_offset;  //!< 数字表示位置のオフセット
-    int rotate_phase; //!< 認識時の回転角度 [0:0 1:90 2:180 3:270]
 
     char *input_problem;  //!< 数独の初期値 1-9以外は空白や未定
     char *result_problem; //!< 数独の解答結果 1-9以外は空白や未定
@@ -136,10 +135,6 @@ private:
 
     //! @brief 画像から枠線を消す
     void delete_grid(void);
-
-    //! @brief 画像を回転する
-    //! @param phase 回転角度 [0:0 1:90 2:180 3:270]
-    void rotate_frame(int phase);
 
     //! @brief  数独を解く
     //! @retval true  数独を解けた

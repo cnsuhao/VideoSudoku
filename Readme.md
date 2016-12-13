@@ -23,7 +23,7 @@ $ make
 ## 実行
 
 ``` bash
-$ cd ~/VideoSudoku
+$ cd ~/VideoSudoku/bin
 $ ./vs
 ```
 

@@ -14,13 +14,26 @@ CFLAGS_DEBUG_DLX_SUDOKU = -g -O3 -DUSE_SUDOKU_MAIN
 CXXFLAGS_DEBUG_DLX_SUDOKU =
 LDFLAGS_DEBUG_DLX_SUDOKU =
 
-TARGET = vs
-SRCS = vs.cc VideoSudoku.cc SudokuOCR.cc SVMOCR.cc dlx_sudoku.c dlx.c
-OBJS = vs.o VideoSudoku.o SudokuOCR.o SVMOCR.o dlx_sudoku.o dlx.o
+INCLUDEDIR = include
+BINDIR = bin
+SRCDIR = src
+OBJDIR = obj
 
-SUBTARGET = dlx_sudoku
-SUBSRCS = dlx_sudoku.c dlx.c
-SUBOBJS = dlx_sudoku.o dlx.o
+INCLUDE = -I$(INCLUDEDIR)
+
+TARGET_NAME = vs
+SRC_NAMES = vs.cc VideoSudoku.cc SudokuOCR.cc SVMOCR.cc dlx_sudoku.c dlx.c
+
+SUBTARGET_NAME = dlx_sudoku
+SUBSRC_NAMES = dlx_sudoku.c dlx.c
+
+TARGET = $(addprefix $(BINDIR)/, $(TARGET_NAME))
+SRCS = $(addprefix $(SRCDIR)/, $(SRC_NAMES))
+OBJS = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(SRC_NAMES))))
+
+SUBTARGET = $(addprefix $(BINDIR)/, $(SUBTARGET_NAME))
+SUBSRCS = $(addprefix $(SRCDIR)/, $(SUBSRC_NAMES))
+SUBOBJS = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(SUBSRC_NAMES))))
 
 .PHONY: release
 .PHONY: debug
@@ -46,13 +59,17 @@ clean:
 	$(RM) $(TARGET) $(SUBTARGET) $(OBJS) $(SUBOBJS)
 
 $(TARGET): $(OBJS)
+	@ -mkdir -p $(BINDIR)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(SUBTARGET): $(SUBOBJS)
+	@ -mkdir -p $(BINDIR)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $^
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	@ -mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $^
 
-%.o: %.cc
-	$(CXX) $(CXXFLAGS) -c $^
+$(OBJDIR)/%.o: $(SRCDIR)/%.cc
+	@ -mkdir -p $(OBJDIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ -c $^

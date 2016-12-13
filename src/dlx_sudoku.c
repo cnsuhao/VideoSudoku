@@ -22,6 +22,10 @@
 #define N_CELL N_ROW * N_COL
 #define N_TYPE_COL 4
 
+#define PROBLEM_FILE1 "test/top95.txt"
+#define PROBLEM_FILE2 "test/diff.txt"
+#define PROBLEM_FILE3 "test/hardest.txt"
+
 static int solve_dlx_sudoku_cb(int nsolution, int *solutions, void *solved_cb_param);
 static void dlx_set_all_cell(dlx_t *dlx);
 static void set_dlx_sudoku_problem(dlx_t *dlx, const char *problem);
@@ -159,12 +163,12 @@ void load_and_solve_sudoku(const char *filename)
     }
 }
 
-#if defined(USE_SUDOKU_MAIN)
+#ifdef USE_SUDOKU_MAIN
 int main(int argc, char **argv)
 {
-    load_and_solve_sudoku("test/top95.txt");
-    load_and_solve_sudoku("test/hardest.txt");
-    load_and_solve_sudoku("test/diff.txt");
+    load_and_solve_sudoku(PROBLEM_FILE1);
+    load_and_solve_sudoku(PROBLEM_FILE2);
+    load_and_solve_sudoku(PROBLEM_FILE3);
 
     return EXIT_SUCCESS;
 }
