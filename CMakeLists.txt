@@ -18,7 +18,7 @@ set(sources ${c_sourses} ${cxx_sourses})
 
 find_package(OpenCV REQUIRED)
 
-include_directories("include" ${OpenCV_INCLUDE_DIRS})
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include" ${OpenCV_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME} ${sources})
 
