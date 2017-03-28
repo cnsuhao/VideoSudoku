@@ -1,8 +1,8 @@
 VideoSudoku
 ===
 
-![VideoSudoku](https://github.com/masaniwa/Screenshots/blob/master/VideoSudoku.png)
-![VideoSudoku](https://github.com/masaniwa/Screenshots/blob/master/VideoSudoku1.png)
+![VideoSudoku](https://github.com/masaniwasdp/Screenshots/blob/master/VideoSudoku.png)
+![VideoSudoku](https://github.com/masaniwasdp/Screenshots/blob/master/VideoSudoku1.png)
 
 Webカメラから入力された数独を解きます。
 
