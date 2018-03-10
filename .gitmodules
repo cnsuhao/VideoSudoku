@@ -1,0 +1,3 @@
+[submodule "library/dlxcc"]
+	path = library/dlxcc
+	url = git://github.com/masaniwasdp/dlxcc

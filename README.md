@@ -36,7 +36,7 @@ SPACEキーを押すと画面表示を固定します。
 また、ESCAPEキーを押すとアプリケーションを終了します。
 
 ## ライセンス
-[MITライセンス](https://github.com/masaniwasdp/VideoSudoku/blob/master/Licence.txt)が適用されます。
+[MITライセンス](https://github.com/masaniwasdp/VideoSudoku/blob/master/LICENCE)が適用されます。
 
 ## 作者
 + Sakamoto Kanta
