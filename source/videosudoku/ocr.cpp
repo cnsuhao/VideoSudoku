@@ -8,6 +8,8 @@ using namespace videosudoku;
 
 using contour_t = std::vector<cv::Point>;
 
+using contours_t = std::vector<contour_t>;
+
 constexpr auto number_margin { 0.05 };
 
 constexpr auto criteria_cols { 0.1 };
@@ -30,7 +32,7 @@ bool is_centered_number(contour_t const &contour, double const cols, double cons
         && rows * criteria_rows <= rect.height;
 }
 
-contour_t const *select_number(std::vector<contour_t> const &contours, double const cols, double const rows)
+contour_t const *select_number(contours_t const &contours, double const cols, double const rows)
 {
     contour_t const *selected { nullptr };
 
@@ -81,7 +83,7 @@ void normalize(cv::Mat &image)
 {
     assert(is_binary(image));
 
-    std::vector<contour_t> contours;
+    contours_t contours;
 
     cv::findContours(image.clone(), contours, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
 
@@ -109,7 +111,7 @@ std::array<svm_node, data_len> to_nodes(cv::Mat const &image)
 
     for (auto i { 0 }; i < data_len - 1; ++i)
     {
-        nodes[i] = { i + 1, static_cast<double>(*it++) };
+        nodes[i] = { i + 1, double(*it++) };
     }
 
     nodes.back().index = -1;

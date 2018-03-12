@@ -1,190 +1,121 @@
-//!
-//! @file      dlx_sudoku.c
-//! @brief     dlx_sudoku モジュール実装
-//! @author    Yamato Komei
-//! @date      2016/8/5
-//! @copyright (c) 2016 Yamato Komei
-//!
+#include "include/videosudoku/solver.hpp"
 
-#include "dlx_sudoku.h"
+#include "library/dlxcc/include/dlxcc/dlx.hpp"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "dlx.h"
-
-#define N 9     //!< 数独の数字の種類
-#define N_ROW N //!< 数独の行の数
-#define N_COL N //!< 数独の列の数
-#define N_BOX N //!< 数独のボックスのマスの数
-
-#define N_BOX_SIDE 3         //!< 数独のボックスの1辺のマスの数
-#define N_CELL N_ROW * N_COL //!< 数独のマスの数
-#define N_TYPE_COL 4         //!< 数独の条件の種類数
-
-#define PROBLEM_FILE1 "resource/test/top95.txt"   //!< テスト用問題ファイル1
-#define PROBLEM_FILE2 "resource/test/diff.txt"    //!< テスト用問題ファイル2
-#define PROBLEM_FILE3 "resource/test/hardest.txt" //!< テスト用問題ファイル3
-
-//! @brief  数独のマスの位置と数字をDLXの行に変換する
-//! @param  row マスの行
-//! @param  col マスの列
-//! @param  num 数字
-//! @return DLXの行
-static int to_dlx_row(const int row, const int col, const int num)
+namespace
 {
-    return (((row * N) + col) * N) + num;
+using namespace videosudoku;
+
+constexpr auto box_side { 3 };
+
+constexpr auto cond_num { 4 };
+
+constexpr auto dlx_rows { sudoku_nums * sudoku_nums * sudoku_nums };
+
+constexpr auto dlx_cols { sudoku_nums * sudoku_nums * cond_num };
+
+constexpr dlxcc::rows_t to_dlx_row(uint8_t const row, uint8_t const col, uint8_t const num) noexcept
+{
+    assert(row < sudoku_nums);
+    assert(col < sudoku_nums);
+    assert(num < sudoku_nums);
+
+    return (row * sudoku_nums + col) * sudoku_nums + num;
 }
 
-//! @brief  数独の条件をDLXの列に変換する
-//! @param  type 条件の種類
-//! @param  a    条件の要素a
-//! @param  b    条件の要素b
-//! @return DLXの列
-static int to_dlx_col(const int type, const int a, const int b)
+constexpr dlxcc::cols_t to_dlx_col(uint8_t const cnd, uint8_t const lhs, uint8_t const rhs) noexcept
 {
-    return (((type * N) + a) * N) + b;
+    assert(cnd < cond_num);
+    assert(lhs < sudoku_nums);
+    assert(rhs < sudoku_nums);
+
+    return (cnd * sudoku_nums + lhs) * sudoku_nums + rhs;
 }
 
-//! @brief  数独のマスの所属するボックスを計算する
-//! @param  row マスの行
-//! @param  col マスの列
-//! @return ボックスの番号
-static int to_sudoku_box(const int row, const int col)
+constexpr uint8_t to_sudoku_box(uint8_t const row, uint8_t const col) noexcept
 {
-    return (row / N_BOX_SIDE * N_BOX_SIDE) + (col / N_BOX_SIDE);
+    assert(row < sudoku_nums);
+    assert(col < sudoku_nums);
+
+    return row / box_side * box_side + col / box_side;
 }
 
-//! @brief  DLXの行を数独の配列のインデックスに変換する
-//! @param  row_index 行
-//! @return 配列のインデックス
-static int to_sudoku_cell(const int row_index)
+constexpr uint8_t to_sudoku_row(dlxcc::rows_t const row) noexcept
 {
-    return row_index / N;
+    assert(row < dlx_rows);
+
+    return row / sudoku_nums / sudoku_nums;
 }
 
-//! @brief  DLXの行を数独の数字に変換する
-//! @param  row_index 行
-//! @return 数字
-static int to_sudoku_num(const int row_index)
+constexpr uint8_t to_sudoku_col(dlxcc::rows_t const row) noexcept
 {
-    return row_index % N;
+    assert(row < dlx_rows);
+
+    return row / sudoku_nums % sudoku_nums;
 }
 
-//! @brief  DLXで解いた数独の解を配列に詰める
-//! @param  nsolution       DLXでの解の数
-//! @param  solutions       DLXでの解の配列
-//! @param  solved_cb_param 数独の解の配列
-//! @return 常に1を返す
-static int solve_dlx_sudoku_cb(int nsolution, int *solutions, void *solved_cb_param)
+constexpr uint8_t to_sudoku_num(dlxcc::rows_t const row) noexcept
 {
-    char *results = (char*)solved_cb_param;
+    assert(row < dlx_rows);
 
-    for(int solution_i = 0; solution_i < nsolution; ++solution_i)
+    return row % sudoku_nums;
+}
+
+constexpr void set_all_cell(dlxcc::dlx_t &dlx)
+{
+    for (uint8_t num { 0 }; num < sudoku_nums; ++num)
     {
-        const int dlx_row_index = solutions[solution_i];
-
-        results[to_sudoku_cell(dlx_row_index)] = (char)(to_sudoku_num(dlx_row_index) + '1');
-    }
-
-    return 1;
-}
-
-//! @brief 数独用にDLXの全要素を配置する
-//! @param dlx 要素を配置するDLX構造体
-static void dlx_set_all_cell(dlx_t *dlx)
-{
-    for(int num = 0; num < N; ++num)
-    {
-        for(int row = 0; row < N_ROW; ++row)
+        for (uint8_t row { 0 }; row < sudoku_nums; ++row)
         {
-            for(int col = 0; col < N_COL; ++col)
+            for (uint8_t col { 0 }; col < sudoku_nums; ++col)
             {
-                dlx_set_cell(dlx, to_dlx_row(row, col, num), to_dlx_col(0, row, col));
-                dlx_set_cell(dlx, to_dlx_row(row, col, num), to_dlx_col(1, row, num));
-                dlx_set_cell(dlx, to_dlx_row(row, col, num), to_dlx_col(2, col, num));
-                dlx_set_cell(dlx, to_dlx_row(row, col, num), to_dlx_col(3, to_sudoku_box(row, col), num));
+                auto const dlx_row { to_dlx_row(row, col, num) };
+
+                dlx.set(dlx_row, to_dlx_col(0, row, col));
+                dlx.set(dlx_row, to_dlx_col(1, row, num));
+                dlx.set(dlx_row, to_dlx_col(2, col, num));
+                dlx.set(dlx_row, to_dlx_col(3, to_sudoku_box(row, col), num));
             }
         }
     }
 }
 
-//! @brief DLXに数独の問題を設定する
-//! @param dlx     数独用に全要素が配置されたDLX構造体
-//! @param problem 数独の問題
-static void set_dlx_sudoku_problem(dlx_t *dlx, const char *problem)
+constexpr void set_problem(dlxcc::dlx_t &dlx, sudoku_t const &problem)
 {
-    for(int row = 0; row < N_ROW; ++row)
+    for (uint8_t row { 0 }; row < sudoku_nums; ++row)
     {
-        for(int col = 0; col < N_COL; ++col)
+        for (uint8_t col { 0 }; col < sudoku_nums; ++col)
         {
-            if(isdigit(*problem) && (*problem != '0'))
+            if (auto const num { problem[row][col] }; num < sudoku_nums)
             {
-                dlx_select_and_remove_row(dlx, to_dlx_row(row, col, (int)(*problem - '1')));
+                dlx.select(to_dlx_row(row, col, num));
             }
-
-            ++problem;
         }
     }
 }
 
-int solve_dlx_sudoku(const char *problem, char *result)
+constexpr void pack_sudoku(sudoku_t &sudoku, dlxcc::rows_t const row) noexcept
 {
-    dlx_t *dlx = dlx_new(N * N_ROW * N_COL, N_ROW * N_COL * N_TYPE_COL, solve_dlx_sudoku_cb, result);
+    assert(row < dlx_rows);
 
-    if(dlx == NULL) return 0;
-
-    memset(result, '.', N_CELL);
-
-    result[N_CELL] = '\0';
-
-    int solved_ploblem = 0;
-
-    dlx_set_all_cell(dlx);
-    set_dlx_sudoku_problem(dlx, problem);
-
-    if(dlx_solve(dlx))
-    {
-        solved_ploblem = 1;
-    }
-
-    dlx_delete(dlx);
-
-    return solved_ploblem;
+    sudoku[to_sudoku_row(row)][to_sudoku_col(row)] = to_sudoku_num(row);
+}
 }
 
-#ifdef DLX_SUDOKU_MAIN
-//! @brief ファイルから数独の問題を読んでそれを解く
-//! @param filename ファイルのパス
-static void load_and_solve_sudoku(const char *filename)
+namespace videosudoku
 {
-    char problem[N_CELL + 1] = {0};
-    char result[N_CELL + 1] = {0};
-
-    FILE *fp = fopen(filename, "r");
-
-    if(fp == NULL) return;
-
-    while(fgets(problem, N_CELL + 1, fp) != NULL)
-    {
-        if(strlen(problem) != N_CELL) continue;
-
-        solve_dlx_sudoku(problem, result);
-
-        printf(" problem: %s\n", problem);
-        printf(" result : %s\n", result);
-    }
-
-    fclose(fp);
-}
-
-int main(void)
+bool complete(sudoku_t &sudoku)
 {
-    load_and_solve_sudoku(PROBLEM_FILE1);
-    load_and_solve_sudoku(PROBLEM_FILE2);
-    load_and_solve_sudoku(PROBLEM_FILE3);
+    dlxcc::dlx_t dlx { dlx_rows, dlx_cols };
 
-    return 0;
+    set_all_cell(dlx);
+
+    set_problem(dlx, sudoku);
+
+    if (!dlx.solve()) return false;
+
+    for (auto const result : dlx.results()) pack_sudoku(sudoku, result);
+
+    return true;
 }
-#endif
+}
