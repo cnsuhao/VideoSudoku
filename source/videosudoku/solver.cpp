@@ -93,13 +93,6 @@ constexpr void set_problem(dlxcc::dlx_t &dlx, sudoku_t const &problem)
         }
     }
 }
-
-constexpr void pack_sudoku(sudoku_t &sudoku, dlxcc::rows_t const row) noexcept
-{
-    assert(row < dlx_rows);
-
-    sudoku[to_sudoku_row(row)][to_sudoku_col(row)] = to_sudoku_num(row);
-}
 }
 
 namespace videosudoku
@@ -114,7 +107,10 @@ bool complete(sudoku_t &sudoku)
 
     if (!dlx.solve()) return false;
 
-    for (auto const result : dlx.results()) pack_sudoku(sudoku, result);
+    for (auto const result : dlx.results())
+    {
+        sudoku[to_sudoku_row(result)][to_sudoku_col(result)] = to_sudoku_num(result);
+    }
 
     return true;
 }

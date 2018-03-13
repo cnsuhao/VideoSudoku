@@ -122,10 +122,9 @@ std::array<svm_node, data_len> to_nodes(cv::Mat const &image)
 
 namespace videosudoku
 {
-ocr_t::ocr_t(std::string const &path)
+ocr_t::ocr_t(std::string const &path):
+    model_ { svm_load_model(path.c_str()) }
 {
-    model_ = svm_load_model(path.c_str());
-
     if (!model_) throw ocr_exception {};
 }
 
