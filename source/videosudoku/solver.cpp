@@ -61,7 +61,7 @@ constexpr uint8_t to_sudoku_num(dlxcc::rows_t const row) noexcept
     return row % sudoku_nums;
 }
 
-constexpr void set_all_cell(dlxcc::dlx_t &dlx)
+constexpr void build_cells(dlxcc::dlx_t &dlx)
 {
     for (uint8_t num { 0 }; num < sudoku_nums; ++num)
     {
@@ -93,18 +93,9 @@ constexpr void set_problem(dlxcc::dlx_t &dlx, sudoku_t const &problem)
         }
     }
 }
-}
 
-namespace videosudoku
+constexpr bool solve(dlxcc::dlx_t &dlx, sudoku_t &sudoku)
 {
-bool complete(sudoku_t &sudoku)
-{
-    dlxcc::dlx_t dlx { dlx_rows, dlx_cols };
-
-    set_all_cell(dlx);
-
-    set_problem(dlx, sudoku);
-
     if (!dlx.solve()) return false;
 
     for (auto const result : dlx.results())
@@ -113,5 +104,19 @@ bool complete(sudoku_t &sudoku)
     }
 
     return true;
+}
+}
+
+namespace videosudoku
+{
+bool complete(sudoku_t &sudoku)
+{
+    dlxcc::dlx_t dlx { dlx_rows, dlx_cols };
+
+    build_cells(dlx);
+
+    set_problem(dlx, sudoku);
+
+    return solve(dlx, sudoku);
 }
 }

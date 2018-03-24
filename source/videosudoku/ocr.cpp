@@ -1,5 +1,7 @@
 #include "include/videosudoku/ocr.hpp"
 
+#include <optional>
+
 #include <opencv2/imgproc.hpp>
 
 namespace
@@ -8,21 +10,19 @@ using namespace videosudoku;
 
 using contour_t = std::vector<cv::Point>;
 
-using contours_t = std::vector<contour_t>;
-
 constexpr auto number_margin { 0.05 };
 
-constexpr auto criteria_cols { 0.1 };
+constexpr auto criteria_cols { 0.10 };
 
-constexpr auto criteria_rows { 0.4 };
+constexpr auto criteria_rows { 0.40 };
 
-constexpr auto default_ratio { 0.9 };
+constexpr auto default_ratio { 0.90 };
 
-constexpr auto image_rc { 30 };
+constexpr auto image_size { 30 };
 
-constexpr auto data_len { image_rc * image_rc + 1 };
+constexpr auto nodes_size { image_size * image_size + 1 };
 
-bool is_centered_number(contour_t const &contour, double const cols, double const rows)
+bool is_centered_number(contour_t const &contour, uint32_t const cols, uint32_t const rows)
 {
     auto const rect { cv::boundingRect(contour) };
 
@@ -32,49 +32,53 @@ bool is_centered_number(contour_t const &contour, double const cols, double cons
         && rows * criteria_rows <= rect.height;
 }
 
-contour_t const *select_number(contours_t const &contours, double const cols, double const rows)
+auto select_number(std::vector<contour_t> &contours, uint32_t const cols, uint32_t const rows)
 {
-    contour_t const *selected { nullptr };
+    std::sort(contours.begin(), contours.end(), [](auto &lhs, auto &rhs) {
+        return cv::contourArea(lhs) > cv::contourArea(rhs);
+    });
 
-    auto max_area { 0.0 };
-
-    for (auto const &contour : contours)
-    {
-        if (!is_centered_number(contour, cols, rows)) continue;
-
-        if (auto const area { cv::contourArea(contour) }; area > max_area)
-        {
-            selected = &contour;
-
-            max_area = area;
-        }
-    }
-
-    return selected;
+    return std::find_if(contours.begin(), contours.end(), [&](auto &contour) {
+        return is_centered_number(contour, cols, rows);
+    });
 }
 
-void crop_number(cv::Mat &image, contour_t const &contour)
+std::optional<cv::Rect> find_number(cv::Mat const &image)
 {
     assert(is_binary(image));
 
-    auto const rect { cv::boundingRect(contour) };
+    std::vector<contour_t> contours;
+
+    cv::findContours(image.clone(), contours, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+
+    auto const number { select_number(contours, image.cols, image.rows) };
+
+    return number == contours.end()
+        ? std::nullopt
+        : std::optional { cv::boundingRect(*number) };
+}
+
+void crop_number(cv::Mat &image, cv::Rect const &rect) noexcept
+{
+    assert(is_binary(image));
 
     auto const x { std::max(rect.x + rect.width / 2 - rect.height / 2, 0) };
 
-    auto const width { x + rect.height > image.cols ? image.cols - x : rect.height };
+    auto const width { std::min(rect.height, image.cols - rect.x) };
 
-    image = image(cv::Rect(x, rect.y, width, rect.height));
+    image = image(cv::Rect { x, rect.y, width, rect.height });
 }
 
-void crop_number(cv::Mat &image)
+void crop_number(cv::Mat &image) noexcept
 {
     assert(is_binary(image));
 
-    cv::Rect const rect(
-        image.cols * number_margin,
-        image.rows * number_margin,
-        image.cols * default_ratio,
-        image.rows * default_ratio);
+    cv::Rect const rect {
+        int32_t(image.cols * number_margin),
+        int32_t(image.rows * number_margin),
+        int32_t(image.cols * default_ratio),
+        int32_t(image.rows * default_ratio)
+    };
 
     image = image(rect);
 }
@@ -83,36 +87,39 @@ void normalize(cv::Mat &image)
 {
     assert(is_binary(image));
 
-    contours_t contours;
-
-    cv::findContours(image.clone(), contours, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
-
-    if (auto const contour { select_number(contours, image.cols, image.rows) })
+    if (auto const rect { find_number(image) })
     {
-        crop_number(image, *contour);
+        crop_number(image, *rect);
     }
     else
     {
         crop_number(image);
     }
 
-    cv::resize(image, image, cv::Size(image_rc, image_rc));
+    cv::resize(image, image, cv::Size(image_size, image_size));
 }
 
-std::array<svm_node, data_len> to_nodes(cv::Mat const &image)
+void pack_nodes(std::array<svm_node, nodes_size> &nodes, cv::Mat const &image) noexcept
 {
     assert(is_binary(image));
-    assert(image.cols == image_rc);
-    assert(image.rows == image_rc);
-
-    std::array<svm_node, data_len> nodes;
+    assert(image.size() == cv::Size(image_size, image_size));
 
     auto it { image.begin<uint8_t>() };
 
-    for (auto i { 0 }; i < data_len - 1; ++i)
+    for (auto i { 0 }; i < nodes_size - 1; ++i)
     {
         nodes[i] = { i + 1, double(*it++) };
     }
+}
+
+std::array<svm_node, nodes_size> to_nodes(cv::Mat const &image) noexcept
+{
+    assert(is_binary(image));
+    assert(image.size() == cv::Size(image_size, image_size));
+
+    std::array<svm_node, nodes_size> nodes;
+
+    pack_nodes(nodes, image);
 
     nodes.back().index = -1;
 
