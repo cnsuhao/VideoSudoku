@@ -46,7 +46,7 @@ std::optional<cv::Rect> select_number(std::vector<contour_t> const &contours, in
 std::optional<cv::Rect> find_number(cv::Mat const &image)
 {
     assert(image.dims == 2);
-    assert(image.depth() == CV_8U);
+    assert(image.type() == CV_8UC1);
 
     std::vector<contour_t> contours;
 
@@ -60,7 +60,7 @@ std::optional<cv::Rect> find_number(cv::Mat const &image)
 void crop_number(cv::Mat &image, cv::Rect const &rect)
 {
     assert(image.dims == 2);
-    assert(image.depth() == CV_8U);
+    assert(image.type() == CV_8UC1);
 
     auto const [x, y, w, h] { rect };
 
@@ -74,7 +74,7 @@ void crop_number(cv::Mat &image, cv::Rect const &rect)
 void crop_number(cv::Mat &image)
 {
     assert(image.dims == 2);
-    assert(image.depth() == CV_8U);
+    assert(image.type() == CV_8UC1);
 
     cv::Rect const rect {
         int32_t(image.cols * number_margin),
@@ -92,15 +92,15 @@ namespace videosudoku::imgproc
 void normalize_number(cv::Mat &image)
 {
     assert(image.dims == 2);
-    assert(image.depth() == CV_8U);
+    assert(image.type() == CV_8UC3);
+
+    to_binary(image, cv::THRESH_BINARY);
 
     if (auto const rect { find_number(image) })
     {
-        crop_number(image, *rect);
+        return crop_number(image, *rect);
     }
-    else
-    {
-        crop_number(image);
-    }
+
+    crop_number(image);
 }
 }
