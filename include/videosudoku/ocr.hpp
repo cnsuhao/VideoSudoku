@@ -21,10 +21,5 @@ public:
 };
 
 class ocr_exception : public std::exception {};
-
-constexpr bool is_binary(cv::Mat const &image) noexcept
-{
-    return image.dims == 2 && image.type() == CV_8UC1;
-}
 }
 #endif

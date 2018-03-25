@@ -25,9 +25,6 @@ constexpr auto cells_number = 9; //!< 一辺のマスの数
 constexpr auto all_cells_number = cells_number * cells_number; //!< 全てのマスの数
 
 constexpr auto result_min_size = 400;  //!< 結果画像の一辺の長さの最小値
-constexpr auto pixel_max_value = 255;  //!< ピクセルの値の最大値
-constexpr auto thresh_block_size = 23; //!< 二値化処理のブロックサイズ
-constexpr auto thresh_const = 5.5;     //!< 二値化処理の定数
 
 constexpr auto input_name = "Input";   //!< 入力画像ウィンドウの名前
 constexpr auto result_name = "Result"; //!< 結果画像ウィンドウの名前
@@ -154,19 +151,20 @@ bool VideoSudoku::solve()
     return false;
 }
 
+void to_binary(cv::Mat &frame, int32_t const type) noexcept
+{
+    assert(frame.dims == 2);
+    assert(frame.type() == CV_8UC3);
+
+    cv::cvtColor(frame, frame, cv::COLOR_RGB2GRAY);
+
+    cv::adaptiveThreshold(frame, frame, 255, cv::ADAPTIVE_THRESH_MEAN_C, type, 23, 5.5);
+}
+
 bool VideoSudoku::fix_outer_frame()
 {
     input_frame.copyTo(temp_frame);
     make_binary_frame(temp_frame, THRESH_BINARY_INV);
-
-    if(!get_outer_contour()) return false;
-
-    const auto contour_matrix = Mat(contour);
-    const auto epsilon = 0.01 * arcLength(contour_matrix, true);
-
-    approxPolyDP(contour_matrix, contour, epsilon, true);
-
-    if(!is_sudoku_contour()) return false;
 
     input_frame.copyTo(temp_frame);
 
@@ -224,20 +222,6 @@ void VideoSudoku::frame_initialize(Mat &frame, const int size) const
     frame = Mat(Size(size, size), CV_8UC3, frame_background_color);
 }
 
-bool VideoSudoku::is_sudoku_contour()
-{
-    if(contour.size() != 4) return false;
-
-    if(!isContourConvex(contour)) return false;
-
-    auto contour_area = contourArea(contour);
-    auto temp_frame_area = temp_frame.rows * temp_frame.cols;
-
-    if(contour_area >= temp_frame_area / 2) return false;
-
-    return true;
-}
-
 void VideoSudoku::draw_result()
 {
     Point position;
@@ -288,41 +272,6 @@ void VideoSudoku::draw_cell()
 
         line(result_frame, pt1, pt2, cell_line_color, 1);
     }
-}
-
-void VideoSudoku::make_binary_frame(Mat &target_frame, const int threshold_type) const
-{
-    cvtColor(target_frame, target_frame, COLOR_RGB2GRAY);
-    adaptiveThreshold(target_frame, target_frame, pixel_max_value, ADAPTIVE_THRESH_MEAN_C, threshold_type, thresh_block_size, thresh_const);
-}
-
-bool VideoSudoku::get_outer_contour()
-{
-    auto max_area_contour = 0u;
-    auto max_area = 0.0;
-
-    vector<vector<Point>> contours;
-
-    findContours(temp_frame, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-
-    if(contours.empty()) return false;
-
-    const auto size = contours.size();
-
-    for(auto i = 0u; i < size; ++i)
-    {
-        auto area = contourArea(contours[i]);
-
-        if(max_area < area)
-        {
-            max_area = area;
-            max_area_contour = i;
-        }
-    }
-
-    contour = contours[max_area_contour];
-
-    return true;
 }
 
 Mat VideoSudoku::get_homography(const vector<Point> &frame_contour, const Rect &bound_rect) const
