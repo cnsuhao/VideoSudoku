@@ -151,16 +151,6 @@ bool VideoSudoku::solve()
     return false;
 }
 
-void to_binary(cv::Mat &frame, int32_t const type) noexcept
-{
-    assert(frame.dims == 2);
-    assert(frame.type() == CV_8UC3);
-
-    cv::cvtColor(frame, frame, cv::COLOR_RGB2GRAY);
-
-    cv::adaptiveThreshold(frame, frame, 255, cv::ADAPTIVE_THRESH_MEAN_C, type, 23, 5.5);
-}
-
 bool VideoSudoku::fix_outer_frame()
 {
     input_frame.copyTo(temp_frame);

@@ -1,14 +1,19 @@
-#include "include/videosudoku/preproc.hpp"
+#include "include/videosudoku/imgproc/sudoku.hpp"
 
-#include <opencv2/imgproc.hpp>
+#include <functional>
+
 #include <range/v3/action/sort.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/transform.hpp>
 
+#include "include/videosudoku/imgproc/helper.hpp"
+
 namespace
 {
-using namespace videosudoku;
+using namespace videosudoku::imgproc;
+
+using namespace std::placeholders;
 
 using contour_t = std::vector<cv::Point>;
 
@@ -34,9 +39,7 @@ std::optional<contour_t> select_sudoku(std::vector<contour_t> const &contours, d
 {
     auto candidates {
         contours
-            | ranges::view::filter([&](auto &contour) {
-                return cv::contourArea(contour) > area;
-            })
+            | ranges::view::filter(std::bind(greater_than, _1, area))
             | ranges::view::transform(to_poly)
     };
 
@@ -56,14 +59,12 @@ std::optional<contour_t> find_sudoku(cv::Mat const &frame, double const area)
 
     cv::findContours(frame.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    contours |= ranges::action::sort([](auto &lhs, auto &rhs) {
-        return cv::contourArea(lhs) > cv::contourArea(rhs);
-    });
+    contours |= ranges::action::sort(greater_by_area);
 
     return select_sudoku(contours, area);
 }
 }
 
-namespace videosudoku
+namespace videosudoku::imgproc
 {
 }
