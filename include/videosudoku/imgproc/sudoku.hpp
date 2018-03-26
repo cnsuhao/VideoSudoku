@@ -5,6 +5,6 @@
 
 namespace videosudoku::imgproc
 {
-std::optional<contour_t> find_sudoku(cv::Mat const &frame, double const area);
+std::optional<contour_t> find_sudoku(cv::Mat const &image, double area);
 }
 #endif

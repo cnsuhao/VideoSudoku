@@ -1,6 +1,5 @@
 #include "include/videosudoku/imgproc/sudoku.hpp"
 
-#include <range/v3/action/sort.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/transform.hpp>
@@ -20,13 +19,9 @@ bool is_sudoku(contour_t const &contour)
 
 contour_t to_poly(contour_t const &contour)
 {
-    contour_t approx;
-
     auto const epsilon { approx_ratio * cv::arcLength(contour, true) };
 
-    cv::approxPolyDP(contour, approx, epsilon, true);
-
-    return approx;
+    return init_with<contour_t>(std::bind(cv::approxPolyDP, contour, _1, epsilon, true));
 }
 
 std::optional<contour_t> select_sudoku(std::vector<contour_t> const &contours, double const area)
@@ -47,16 +42,14 @@ std::optional<contour_t> select_sudoku(std::vector<contour_t> const &contours, d
 
 namespace videosudoku::imgproc
 {
-std::optional<contour_t> find_sudoku(cv::Mat const &frame, double const area)
+std::optional<contour_t> find_sudoku(cv::Mat const &image, double const area)
 {
-    assert(frame.dims == 2);
-    assert(frame.type() == CV_8UC1);
+    assert(image.dims == 2);
+    assert(image.type() == CV_8UC3);
 
-    std::vector<contour_t> contours;
+    auto const binary { init_with<cv::Mat>(std::bind(to_binary, image, _1, cv::THRESH_BINARY_INV)) };
 
-    cv::findContours(frame.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    contours |= ranges::action::sort(greater_by_area);
+    auto const contours { find_contours(binary, cv::RETR_EXTERNAL) };
 
     return select_sudoku(contours, area);
 }
