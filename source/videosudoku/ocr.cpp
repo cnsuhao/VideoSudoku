@@ -58,10 +58,8 @@ uint8_t ocr_t::recognize(cv::Mat const &image) const
     assert(image.dims == 2);
     assert(image.type() == CV_8UC1);
 
-    cv::Mat sized;
+    cv::resize(image, working, cv::Size { image_size, image_size });
 
-    cv::resize(image, sized, cv::Size { image_size, image_size });
-
-    return svm_predict(model_, to_nodes(sized).data());
+    return svm_predict(model_, to_nodes(working).data());
 }
 }

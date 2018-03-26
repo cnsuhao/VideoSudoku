@@ -8,6 +8,8 @@ namespace videosudoku
 {
 class ocr_t final
 {
+    cv::Mat working {};
+
     svm_model *model_ { nullptr };
 
 public:
