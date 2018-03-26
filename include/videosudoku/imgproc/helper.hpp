@@ -7,7 +7,15 @@ namespace videosudoku::imgproc
 {
 using contour_t = std::vector<cv::Point>;
 
-void to_binary(cv::Mat &frame, int32_t const type);
+template<typename T, typename F>
+constexpr T init_with(F const &func_with_ref)
+{
+    T value;
+
+    func_with_ref(value);
+
+    return value;
+}
 
 inline bool greater_by_area(contour_t const &lhs, contour_t const &rhs)
 {
@@ -18,5 +26,9 @@ inline bool greater_than(contour_t const &contour, double const area)
 {
     return cv::contourArea(contour) > area;
 }
+
+void to_binary(cv::Mat const &src, cv::Mat &dst, int32_t type);
+
+std::vector<contour_t> find_contours(cv::Mat const &image, int32_t mode);
 }
 #endif
