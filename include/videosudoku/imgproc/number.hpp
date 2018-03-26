@@ -5,6 +5,6 @@
 
 namespace videosudoku::imgproc
 {
-void normalize_number(cv::Mat &image);
+void normalize_number(cv::Mat const &src, cv::Mat &dst);
 }
 #endif

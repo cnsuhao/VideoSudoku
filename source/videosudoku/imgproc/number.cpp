@@ -1,6 +1,5 @@
 #include "include/videosudoku/imgproc/number.hpp"
 
-#include <range/v3/action/sort.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 
 #include "include/videosudoku/imgproc/helper.hpp"
@@ -29,32 +28,21 @@ bool is_centered_number(contour_t const &contour, int32_t const cols, int32_t co
         && h >= rows * criteria_rows;
 }
 
-std::optional<cv::Rect> select_number(std::vector<contour_t> const &contours, int32_t const cols, int32_t const rows)
+std::optional<cv::Rect> find_number(cv::Mat const &image)
 {
-    auto const number {
-        ranges::find_if(contours, std::bind(is_centered_number, _1, cols, rows))
-    };
+    assert(image.dims == 2);
+    assert(image.type() == CV_8UC1);
+
+    auto const contours { find_contours(image, cv::RETR_CCOMP) };
+
+    auto const number { ranges::find_if(contours, std::bind(is_centered_number, _1, image.cols, image.rows)) };
 
     return number == contours.end()
         ? std::nullopt
         : std::optional { cv::boundingRect(*number) };
 }
 
-std::optional<cv::Rect> find_number(cv::Mat const &image)
-{
-    assert(image.dims == 2);
-    assert(image.type() == CV_8UC1);
-
-    std::vector<contour_t> contours;
-
-    cv::findContours(image.clone(), contours, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
-
-    contours |= ranges::action::sort(greater_by_area);
-
-    return select_number(contours, image.cols, image.rows);
-}
-
-void crop_number(cv::Mat &image, cv::Rect const &rect)
+cv::Mat roi_number(cv::Mat const &image, cv::Rect const &rect)
 {
     assert(image.dims == 2);
     assert(image.type() == CV_8UC1);
@@ -65,10 +53,10 @@ void crop_number(cv::Mat &image, cv::Rect const &rect)
 
     auto const new_w { std::min(h, image.cols - new_x) };
 
-    image = image(cv::Rect { new_x, y, new_w, h });
+    return image(cv::Rect { new_x, y, new_w, h });
 }
 
-void crop_number(cv::Mat &image)
+cv::Mat roi_number(cv::Mat const &image)
 {
     assert(image.dims == 2);
     assert(image.type() == CV_8UC1);
@@ -80,24 +68,21 @@ void crop_number(cv::Mat &image)
         int32_t(image.rows * default_ratio)
     };
 
-    image = image(rect);
+    return image(rect);
 }
 }
 
 namespace videosudoku::imgproc
 {
-void normalize_number(cv::Mat &image)
+void normalize_number(cv::Mat const &src, cv::Mat &dst)
 {
-    assert(image.dims == 2);
-    assert(image.type() == CV_8UC3);
+    assert(src.dims == 2);
+    assert(src.type() == CV_8UC3);
 
-    to_binary(image, cv::THRESH_BINARY);
+    to_binary(src, dst, cv::THRESH_BINARY);
 
-    if (auto const rect { find_number(image) })
-    {
-        return crop_number(image, *rect);
-    }
+    auto const rect { find_number(dst) };
 
-    crop_number(image);
+    dst = rect ? roi_number(dst, *rect) : roi_number(dst);
 }
 }
