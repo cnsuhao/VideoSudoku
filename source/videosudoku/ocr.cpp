@@ -1,7 +1,5 @@
 #include "include/videosudoku/ocr.hpp"
 
-#include <optional>
-
 #include <opencv2/imgproc.hpp>
 
 namespace

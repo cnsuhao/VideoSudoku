@@ -1,7 +1,5 @@
 #include "include/videosudoku/imgproc/number.hpp"
 
-#include <functional>
-
 #include <range/v3/action/sort.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 
