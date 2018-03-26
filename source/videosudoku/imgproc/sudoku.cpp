@@ -1,21 +1,15 @@
 #include "include/videosudoku/imgproc/sudoku.hpp"
 
-#include <functional>
-
 #include <range/v3/action/sort.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/transform.hpp>
-
-#include "include/videosudoku/imgproc/helper.hpp"
 
 namespace
 {
 using namespace videosudoku::imgproc;
 
 using namespace std::placeholders;
-
-using contour_t = std::vector<cv::Point>;
 
 constexpr auto approx_ratio { 0.01 };
 
@@ -24,9 +18,9 @@ bool is_sudoku(contour_t const &contour)
     return contour.size() == 4 && cv::isContourConvex(contour);
 }
 
-cv::Mat to_poly(contour_t const &contour)
+contour_t to_poly(contour_t const &contour)
 {
-    cv::Mat approx;
+    contour_t approx;
 
     auto const epsilon { approx_ratio * cv::arcLength(contour, true) };
 
@@ -49,7 +43,10 @@ std::optional<contour_t> select_sudoku(std::vector<contour_t> const &contours, d
         ? std::nullopt
         : std::optional { *sudoku };
 }
+}
 
+namespace videosudoku::imgproc
+{
 std::optional<contour_t> find_sudoku(cv::Mat const &frame, double const area)
 {
     assert(frame.dims == 2);
@@ -63,8 +60,4 @@ std::optional<contour_t> find_sudoku(cv::Mat const &frame, double const area)
 
     return select_sudoku(contours, area);
 }
-}
-
-namespace videosudoku::imgproc
-{
 }
